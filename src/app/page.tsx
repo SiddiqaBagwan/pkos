@@ -1,6 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { CollectionList } from "@/components/collections/collection-list";
-
+import { CreateCollectionForm } from "@/components/collections/create-collection-form";
 import {
   Card,
   CardContent,
@@ -54,6 +54,7 @@ export default function Home() {
 
           {/* Collections Section */}
           <div className="mt-8">
+            <CreateCollectionForm />
             <CollectionList />
           </div>
 
