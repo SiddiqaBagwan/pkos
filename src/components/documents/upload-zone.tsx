@@ -1,6 +1,8 @@
 "use client";
+
 import { DocumentCard } from "./document-card";
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export function UploadZone() {
   const [files, setFiles] = useState<
@@ -10,13 +12,49 @@ export function UploadZone() {
   const [selectedCollection, setSelectedCollection] =
     useState("Research");
 
-  const handleUpload = (
+  const handleUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const selectedFile = event.target.files?.[0];
 
     if (!selectedFile) return;
 
+    const filePath = `${Date.now()}-${selectedFile.name}`;
+
+    // Upload file to Supabase Storage
+    const { error: uploadError } = await supabase
+      .storage
+      .from("documents")
+      .upload(filePath, selectedFile);
+
+    if (uploadError) {
+      alert(uploadError.message);
+      return;
+    }
+
+    // Get public URL
+    const { data } = supabase
+      .storage
+      .from("documents")
+      .getPublicUrl(filePath);
+
+    const fileUrl = data.publicUrl;
+
+    // Save metadata in documents table
+    const { error: dbError } = await supabase
+      .from("documents")
+      .insert({
+        title: selectedFile.name,
+        file_url: fileUrl,
+        collection_id: 1, // temporary
+      });
+
+    if (dbError) {
+      alert(dbError.message);
+      return;
+    }
+
+    // Update UI
     setFiles([
       ...files,
       {
@@ -69,14 +107,14 @@ export function UploadZone() {
           <p>No files uploaded yet.</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-  {files.map((file, index) => (
-    <DocumentCard
-      key={index}
-      name={file.name}
-      collection={file.collection}
-    />
-  ))}
-</div>
+            {files.map((file, index) => (
+              <DocumentCard
+                key={index}
+                name={file.name}
+                collection={file.collection}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
